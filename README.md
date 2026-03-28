@@ -37,6 +37,49 @@ opartym o uslugi oraz agentem Windows do egzekwowania polityk USB.
 - [Database ERD](docs/diagrams/database-erd.md)
 - [Agent Workflow](docs/diagrams/agent-workflow.md)
 
+## Git Workflow
+
+Projekt nie powinien byc rozwijany bezposrednio na `main`.
+
+Przyjeta strategia branchy:
+
+- `production` - stabilna galaz produkcyjna, tylko sprawdzone zmiany
+- `develop` - glowna galaz developerska
+- `feature/*` - nowe funkcje rozwijane od `develop`
+- `fix/*` - poprawki bledow rozwijane od `develop`
+
+Zalecany przeplyw pracy:
+
+1. Tworzymy branch `feature/*` lub `fix/*` od `develop`.
+2. Implementujemy zmiane razem z testami jednostkowymi.
+3. Scalmy zmiane do `develop`.
+4. Po zebraniu stabilnego zestawu zmian scalmy `develop` do `production`.
+
+Przyklady nazw branchy:
+
+- `feature/prisma-schema`
+- `feature/auth-service-bootstrap`
+- `feature/device-heartbeat-contract`
+- `fix/api-validation`
+
+## Testing Policy
+
+Testy jednostkowe piszemy od poczatku projektu i traktujemy jako czesc kazdej
+zmiany.
+
+Minimalne zasady:
+
+- kazda logika biznesowa powinna miec testy jednostkowe
+- walidacja danych wejsciowych powinna byc testowana
+- zmiany w kontraktach API powinny miec testy
+- poprawki bledow powinny dostawac test regresyjny
+
+Preferowany kierunek:
+
+- backend Node.js: `Vitest` lub `Jest`
+- frontend React: `Vitest` + `React Testing Library`
+- agent .NET: `xUnit`
+
 ## Initial Scope
 
 Pierwsza wersja projektu obejmuje:
