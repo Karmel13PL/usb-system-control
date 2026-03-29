@@ -2,6 +2,7 @@
   "name": "@usb-system-control/backend",
   "private": true,
   "version": "0.1.0",
+  "type": "module",
   "description": "Backend workspace for USB System Control",
   "workspaces": [
     "auth-service",
@@ -13,8 +14,20 @@
     "node": ">=22.0.0"
   },
   "scripts": {
-    "test": "npm run test --workspace auth-service",
+    "dev": "npm run dev --workspace auth-service",
     "build": "npm run build --workspace auth-service",
-    "dev": "npm run dev --workspace auth-service"
+    "test": "npm run test --workspace auth-service",
+    "prisma:format": "prisma format",
+    "prisma:validate": "prisma validate",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate:dev": "prisma migrate dev",
+    "prisma:studio": "prisma studio"
+  },
+  "devDependencies": {
+    "dotenv": "^17.3.1",
+    "prisma": "^7.6.0"
+  },
+  "dependencies": {
+    "@prisma/client": "^7.6.0"
   }
 }

@@ -1,0 +1,131 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  admin
+}
+
+enum DeviceStatus {
+  online
+  offline
+  unknown
+}
+
+enum UsbPolicyMode {
+  allow_all
+  block_all
+  whitelist_only
+}
+
+enum EventType {
+  device_registered
+  heartbeat_received
+  usb_inserted
+  usb_allowed
+  usb_blocked
+  policy_changed
+  policy_applied
+}
+
+model User {
+  id           String     @id @default(uuid()) @db.Uuid
+  email        String     @unique @db.VarChar(255)
+  passwordHash String     @map("password_hash") @db.VarChar(255)
+  role         UserRole   @default(admin)
+  createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
+  auditLogs    AuditLog[]
+
+  @@map("users")
+}
+
+model Device {
+  id                     String                @id @default(uuid()) @db.Uuid
+  hostname               String                @db.VarChar(255)
+  agentToken             String                @unique @map("agent_token") @db.VarChar(255)
+  status                 DeviceStatus          @default(unknown)
+  policyMode             UsbPolicyMode         @default(whitelist_only) @map("policy_mode")
+  agentVersion           String?               @map("agent_version") @db.VarChar(50)
+  osVersion              String?               @map("os_version") @db.VarChar(100)
+  lastIpAddress          String?               @map("last_ip_address") @db.VarChar(45)
+  lastMacAddress         String?               @map("last_mac_address") @db.VarChar(17)
+  lastLoggedInUser       String?               @map("last_logged_in_user") @db.VarChar(255)
+  lastDomain             String?               @map("last_domain") @db.VarChar(255)
+  lastReportedUsbBlocked Boolean               @default(false) @map("last_reported_usb_blocked")
+  deviceFingerprint      String?               @map("device_fingerprint") @db.VarChar(255)
+  lastSeenAt             DateTime?             @map("last_seen_at") @db.Timestamptz(6)
+  createdAt              DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt              DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
+  usbAssignments         DeviceUsbAssignment[]
+  events                 Event[]
+
+  @@index([status], map: "devices_status_idx")
+  @@index([lastSeenAt], map: "devices_last_seen_at_idx")
+  @@index([hostname], map: "devices_hostname_idx")
+  @@index([deviceFingerprint], map: "devices_device_fingerprint_idx")
+  @@map("devices")
+}
+
+model UsbWhitelist {
+  id           String                @id @default(uuid()) @db.Uuid
+  serialNumber String                @unique @map("serial_number") @db.VarChar(255)
+  vendor       String?               @db.VarChar(255)
+  productName  String?               @map("product_name") @db.VarChar(255)
+  description  String?
+  createdAt    DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deviceLinks  DeviceUsbAssignment[]
+
+  @@index([vendor], map: "usb_whitelist_vendor_idx")
+  @@map("usb_whitelist")
+}
+
+model DeviceUsbAssignment {
+  id             String       @id @default(uuid()) @db.Uuid
+  deviceId       String       @map("device_id") @db.Uuid
+  usbWhitelistId String       @map("usb_whitelist_id") @db.Uuid
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  device         Device       @relation(fields: [deviceId], references: [id], onDelete: Restrict)
+  usbWhitelist   UsbWhitelist @relation(fields: [usbWhitelistId], references: [id], onDelete: Restrict)
+
+  @@unique([deviceId, usbWhitelistId], map: "device_usb_assignments_device_usb_uq")
+  @@index([deviceId], map: "device_usb_assignments_device_idx")
+  @@index([usbWhitelistId], map: "device_usb_assignments_usb_idx")
+  @@map("device_usb_assignments")
+}
+
+model Event {
+  id         String    @id @default(uuid()) @db.Uuid
+  deviceId   String    @map("device_id") @db.Uuid
+  eventType  EventType @map("event_type")
+  payload    Json      @default("{}")
+  occurredAt DateTime  @map("occurred_at") @db.Timestamptz(6)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  device     Device    @relation(fields: [deviceId], references: [id], onDelete: Restrict)
+
+  @@index([deviceId], map: "events_device_id_idx")
+  @@index([eventType], map: "events_event_type_idx")
+  @@index([occurredAt(sort: Desc)], map: "events_occurred_at_idx")
+  @@map("events")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  action     String   @db.VarChar(100)
+  entityType String   @map("entity_type") @db.VarChar(100)
+  entityId   String?  @map("entity_id") @db.Uuid
+  payload    Json     @default("{}")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId], map: "audit_logs_user_id_idx")
+  @@index([entityType, entityId], map: "audit_logs_entity_type_entity_id_idx")
+  @@index([createdAt(sort: Desc)], map: "audit_logs_created_at_idx")
+  @@map("audit_logs")
+}
