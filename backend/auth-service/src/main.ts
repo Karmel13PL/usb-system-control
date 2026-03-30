@@ -1,15 +1,30 @@
+import "./config/load-env.js";
 import { createServer } from "node:http";
 
-import { createApp } from "./app.js";
+import { handleRequest } from "./app.js";
+import { disconnectPrisma } from "./infrastructure/database/prisma.js";
 
-const app = createApp();
 const port = Number(process.env.PORT ?? 3001);
 
-const server = createServer((_request, response) => {
-  response.writeHead(200, { "Content-Type": "application/json" });
-  response.end(JSON.stringify({ status: "ok", ...app }));
+const server = createServer((request, response) => {
+  void handleRequest(request, response);
 });
 
 server.listen(port, () => {
   console.log(`[auth-service] listening on port ${port}`);
+});
+
+async function shutdown() {
+  server.close(async () => {
+    await disconnectPrisma();
+    process.exit(0);
+  });
+}
+
+process.on("SIGINT", () => {
+  void shutdown();
+});
+
+process.on("SIGTERM", () => {
+  void shutdown();
 });
