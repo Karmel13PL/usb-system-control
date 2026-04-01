@@ -1,8 +1,9 @@
-import "../../config/load-env.js";
-
+import { Injectable, OnModuleDestroy } from "@nestjs/common";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import pg from "pg";
+
+import "../load-env.js";
 
 const connectionString = process.env.DATABASE_URL;
 
@@ -16,11 +17,14 @@ const pool = new pg.Pool({
 
 const adapter = new PrismaPg(pool);
 
-export const prisma = new PrismaClient({
-  adapter,
-});
+@Injectable()
+export class PrismaService extends PrismaClient implements OnModuleDestroy {
+  constructor() {
+    super({ adapter });
+  }
 
-export async function disconnectPrisma(): Promise<void> {
-  await prisma.$disconnect();
-  await pool.end();
+  async onModuleDestroy(): Promise<void> {
+    await this.$disconnect();
+    await pool.end();
+  }
 }

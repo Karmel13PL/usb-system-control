@@ -1,30 +1,26 @@
-import "./config/load-env.js";
-import { createServer } from "node:http";
+import "reflect-metadata";
+import "./load-env.js";
 
-import { handleRequest } from "./app.js";
-import { disconnectPrisma } from "./infrastructure/database/prisma.js";
+import { ValidationPipe } from "@nestjs/common";
+import { NestFactory } from "@nestjs/core";
 
-const port = Number(process.env.PORT ?? 3001);
+import { AppModule } from "./app.module.js";
 
-const server = createServer((request, response) => {
-  void handleRequest(request, response);
-});
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
 
-server.listen(port, () => {
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
+
+  const port = Number(process.env.PORT ?? 3001);
+  await app.listen(port);
+
   console.log(`[auth-service] listening on port ${port}`);
-});
-
-async function shutdown() {
-  server.close(async () => {
-    await disconnectPrisma();
-    process.exit(0);
-  });
 }
 
-process.on("SIGINT", () => {
-  void shutdown();
-});
-
-process.on("SIGTERM", () => {
-  void shutdown();
-});
+void bootstrap();

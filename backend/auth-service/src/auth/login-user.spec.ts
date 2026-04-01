@@ -1,15 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  InvalidCredentialsError,
-  loginUser,
-} from "../../application/login-user.js";
-import type { User } from "../../domain/users/user.js";
+import { InvalidCredentialsError } from "./auth.errors.js";
+import { loginUser } from "./login-user.js";
+import type { AuthUser } from "./auth.types.js";
 
 class InMemoryUserRepository {
-  constructor(private readonly user: User | null) {}
+  constructor(private readonly user: AuthUser | null) {}
 
-  async findByEmail(): Promise<User | null> {
+  async findByEmail(): Promise<AuthUser | null> {
     return this.user;
   }
 }

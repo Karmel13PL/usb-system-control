@@ -1,32 +1,10 @@
-import type { User } from "../domain/users/user.js";
-
-export interface UserRepository {
-  findByEmail(email: string): Promise<User | null>;
-}
-
-export interface PasswordHasher {
-  compare(plainText: string, hash: string): Promise<boolean>;
-}
-
-export interface LoginUserInput {
-  email: string;
-  password: string;
-}
-
-export interface LoginUserSuccess {
-  user: {
-    id: string;
-    email: string;
-    role: "admin";
-  };
-}
-
-export class InvalidCredentialsError extends Error {
-  constructor() {
-    super("Invalid email or password");
-    this.name = "InvalidCredentialsError";
-  }
-}
+import type {
+  LoginUserInput,
+  LoginUserSuccess,
+  PasswordHasher,
+  UserRepository,
+} from "./auth.types.js";
+import { InvalidCredentialsError } from "./auth.errors.js";
 
 export function validateLoginUserInput(input: LoginUserInput): void {
   if (!input.email || !input.password) {
